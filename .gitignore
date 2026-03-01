@@ -1,6 +1,5 @@
 node_modules/
 build/
-dist/
 coverage/
 .DS_Store
 *.log
@@ -9,3 +8,6 @@ coverage/
 .env.*.local
 !.env.example
 metadata.json
+
+.vercel
+.env*.local
