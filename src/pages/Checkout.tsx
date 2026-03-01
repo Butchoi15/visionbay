@@ -167,6 +167,10 @@ export function Checkout() {
                   <input required name="fullName" type="text" defaultValue={user?.name} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all" />
                 </div>
                 <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Email Address</label>
+                  <input required name="email" type="email" defaultValue={user?.email} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium text-slate-700">Mobile Number</label>
                   <input required name="mobileNumber" type="tel" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all" placeholder="+1 (555) 000-0000" />
                 </div>
