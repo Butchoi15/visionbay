@@ -118,6 +118,10 @@ class Database {
     await updateDoc(doc(firestore, 'orders', order.id), order as any);
   }
 
+  async deleteOrder(id: string): Promise<void> {
+    await deleteDoc(doc(firestore, 'orders', id));
+  }
+
   async getNotifications(userId: string): Promise<Notification[]> {
     const q = query(
       collection(firestore, 'notifications'),

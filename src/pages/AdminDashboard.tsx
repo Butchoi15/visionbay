@@ -102,6 +102,13 @@ export function AdminDashboard() {
     }
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    if (confirm('Are you sure you want to delete this order/inquiry? This cannot be undone.')) {
+      await db.deleteOrder(orderId);
+      await loadData();
+    }
+  };
+
   if (!user || user.role !== 'admin') return null;
 
   const totalSales = orders.filter(o => o.status !== 'Inquiry' && o.status !== 'Available').reduce((sum, o) => sum + o.totalAmount, 0);
@@ -273,6 +280,14 @@ export function AdminDashboard() {
                       className="flex-1 sm:flex-none bg-slate-100 text-slate-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-200 transition-colors"
                     >
                       {expandedOrders[order.id] ? 'Hide Details' : 'View Details'}
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteOrder(order.id)}
+                      className="flex-1 sm:flex-none bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+                      title="Delete Order"
+                    >
+                      <Trash2 size={16} /> Delete
                     </button>
                   </div>
                 </div>
