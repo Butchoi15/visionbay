@@ -121,6 +121,32 @@ export function ProductDetails() {
     }
   };
 
+  const handleDirectPurchase = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!product) return;
+    setIsUnlocking(true);
+    try {
+      const newOrder: Order = {
+        id: `ord-${Date.now()}`,
+        userId: user.id,
+        productId: product.id,
+        quantity,
+        totalAmount: product.price * quantity,
+        status: 'Available',
+        date: new Date().toISOString(),
+        inquiryMessage: '[Direct Purchase]'
+      };
+      await db.saveOrder(newOrder);
+      navigate(`/checkout/${newOrder.id}`);
+    } catch (e) {
+      console.error('Direct purchase failed:', e);
+      setIsUnlocking(false);
+    }
+  };
+
   return (
     <div className="space-y-12 pb-16">
       <nav className="flex items-center gap-2 text-sm text-slate-500">
@@ -193,12 +219,14 @@ export function ProductDetails() {
               {product.description}
             </p>
 
-            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3 mb-8">
-              <AlertCircle className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
-              <p className="text-sm text-orange-800 font-medium">
-                Please note: Customers must click the "Ask for availability" button before purchasing this item. We carefully verify stock for all items.
-              </p>
-            </div>
+            {!product.isUnlocked && (
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3 mb-8">
+                <AlertCircle className="text-orange-500 flex-shrink-0 mt-0.5" size={20} />
+                <p className="text-sm text-orange-800 font-medium">
+                  Please note: Customers must click the "Ask for availability" button before purchasing this item. We carefully verify stock for all items.
+                </p>
+              </div>
+            )}
           </motion.div>
 
           <div className="space-y-6 mb-8 flex-1">
@@ -257,7 +285,24 @@ export function ProductDetails() {
               </motion.div>
             )}
 
-            {!existingOrder && !showInquiryForm && (
+            {product.isUnlocked && existingOrder?.status !== 'Available' && (
+              <button
+                onClick={handleDirectPurchase}
+                disabled={isUnlocking}
+                className="w-full h-14 rounded-full font-bold flex items-center justify-center gap-2 bg-orange-500 text-white hover:bg-orange-600 transition-all shadow-lg shadow-orange-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {isUnlocking ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <ShoppingCart size={20} />
+                    Proceed to checkout
+                  </>
+                )}
+              </button>
+            )}
+
+            {!product.isUnlocked && !existingOrder && !showInquiryForm && (
               <button
                 onClick={() => {
                   if (!user) navigate('/login');
@@ -270,7 +315,7 @@ export function ProductDetails() {
               </button>
             )}
 
-            {showInquiryForm && (
+            {!product.isUnlocked && showInquiryForm && (
               <motion.form
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
@@ -293,7 +338,7 @@ export function ProductDetails() {
               </motion.form>
             )}
 
-            {existingOrder && existingOrder.status === 'Inquiry' && !inquirySubmitted && (
+            {!product.isUnlocked && existingOrder && existingOrder.status === 'Inquiry' && !inquirySubmitted && (
               <div className="bg-blue-50 text-blue-800 p-4 rounded-xl text-sm font-medium flex items-center gap-3">
                 <Clock className="text-blue-600" size={20} />
                 Your availability request is pending admin approval.

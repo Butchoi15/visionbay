@@ -21,7 +21,8 @@ export function AdminProductForm() {
     image: '',
     additionalImages: [''],
     description: '',
-    features: ['']
+    features: [''],
+    isUnlocked: false
   });
 
   useEffect(() => {
@@ -125,7 +126,8 @@ export function AdminProductForm() {
       image: formData.image || 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&auto=format&fit=crop&q=80',
       additionalImages: (formData.additionalImages || []).filter(img => img.trim() !== ''),
       description: formData.description || '',
-      features: (formData.features || []).filter(f => f.trim() !== '')
+      features: (formData.features || []).filter(f => f.trim() !== ''),
+      isUnlocked: formData.isUnlocked || false
     };
 
     if (isEditing) {
@@ -187,6 +189,22 @@ export function AdminProductForm() {
               <option value="Good">Good</option>
               <option value="Fair">Fair</option>
             </select>
+          </div>
+
+          <div className="space-y-4 md:col-span-2 pt-2 pb-4">
+            <label className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
+              <input
+                type="checkbox"
+                name="isUnlocked"
+                checked={!!formData.isUnlocked}
+                onChange={(e) => setFormData(prev => ({ ...prev, isUnlocked: e.target.checked }))}
+                className="w-5 h-5 text-orange-500 rounded border-slate-300 focus:ring-orange-500 transition-colors"
+              />
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-slate-900">Direct Checkout (Unlocked)</span>
+                <span className="text-xs text-slate-500">Allow users to bypass the inquiry process and proceed directly to checkout.</span>
+              </div>
+            </label>
           </div>
 
           <div className="space-y-2">

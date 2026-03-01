@@ -21,6 +21,7 @@ export interface Product {
   features: string[];
   condition?: string;
   additionalImages?: string[];
+  isUnlocked?: boolean;
 }
 
 export interface Order {
