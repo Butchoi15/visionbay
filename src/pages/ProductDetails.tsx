@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ShoppingCart, Check, ChevronRight, ArrowRight, AlertCircle, CreditCard, Send, Clock } from 'lucide-react';
+import { ShoppingCart, Check, ChevronRight, ArrowRight, AlertCircle, CreditCard, Send, Clock, Unlock } from 'lucide-react';
 import { db, Product, Order } from '../lib/db';
 import { useAuth } from '../context/AuthContext';
 
@@ -17,6 +17,7 @@ export function ProductDetails() {
   const [inquiryMessage, setInquiryMessage] = useState('');
   const [inquirySubmitted, setInquirySubmitted] = useState(false);
   const [existingOrder, setExistingOrder] = useState<Order | null>(null);
+  const [isUnlocking, setIsUnlocking] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -96,6 +97,28 @@ export function ProductDetails() {
     setExistingOrder(newOrder);
     setInquirySubmitted(true);
     setShowInquiryForm(false);
+  };
+
+  const handleAdminUnlock = async () => {
+    if (!user || !product) return;
+    setIsUnlocking(true);
+    try {
+      const newOrder: Order = {
+        id: `ord-${Date.now()}`,
+        userId: user.id,
+        productId: product.id,
+        quantity,
+        totalAmount: product.price * quantity,
+        status: 'Available',
+        date: new Date().toISOString(),
+        inquiryMessage: '[Admin direct unlock]'
+      };
+      await db.saveOrder(newOrder);
+      navigate(`/checkout/${newOrder.id}`);
+    } catch (e) {
+      console.error('Admin unlock failed:', e);
+      setIsUnlocking(false);
+    }
   };
 
   return (
@@ -202,6 +225,27 @@ export function ProductDetails() {
           </div>
 
           <div className="space-y-4 pt-6 border-t border-slate-100">
+            {user?.role === 'admin' && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-widest text-indigo-500 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">Admin Action</span>
+                </div>
+                <button
+                  onClick={handleAdminUnlock}
+                  disabled={isUnlocking}
+                  className="w-full h-14 rounded-full font-bold flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isUnlocking ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Unlock size={20} />
+                      Unlock &amp; Go to Checkout
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
             {inquirySubmitted && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
