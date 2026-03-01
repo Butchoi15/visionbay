@@ -109,6 +109,13 @@ export function AdminDashboard() {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    if (confirm('Are you sure you want to delete this user? All their data will be removed. This cannot be undone.')) {
+      await db.deleteUser(userId);
+      await loadData();
+    }
+  };
+
   if (!user || user.role !== 'admin') return null;
 
   const totalSales = orders.filter(o => o.status !== 'Inquiry' && o.status !== 'Available').reduce((sum, o) => sum + o.totalAmount, 0);
@@ -200,6 +207,7 @@ export function AdminDashboard() {
                     <th className="pb-3 font-medium">Email</th>
                     <th className="pb-3 font-medium">Total Orders</th>
                     <th className="pb-3 font-medium">Total Spent</th>
+                    <th className="pb-3 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -212,6 +220,15 @@ export function AdminDashboard() {
                         <td className="py-4 text-slate-500">{u.email}</td>
                         <td className="py-4 font-bold text-slate-900">{userOrders.length}</td>
                         <td className="py-4 text-slate-900">${spent.toFixed(2)}</td>
+                        <td className="py-4">
+                          <button
+                            onClick={() => handleDeleteUser(u.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete User"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}

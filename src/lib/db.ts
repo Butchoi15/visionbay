@@ -87,6 +87,10 @@ class Database {
     await updateDoc(doc(firestore, 'users', user.id), user as any);
   }
 
+  async deleteUser(id: string): Promise<void> {
+    await deleteDoc(doc(firestore, 'users', id));
+  }
+
   async getProducts(): Promise<Product[]> {
     const querySnapshot = await getDocs(collection(firestore, 'products'));
     return querySnapshot.docs.map(doc => doc.data() as Product);
