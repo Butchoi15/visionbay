@@ -13,6 +13,7 @@ export function Search() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [maxPrice, setMaxPrice] = useState(1000);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [sortBy, setSortBy] = useState('popular');
 
@@ -21,6 +22,16 @@ export function Search() {
       try {
         const result = await db.getProducts();
         setProducts(result);
+
+        // Dynamically set max price based on actual products
+        if (result.length > 0) {
+          const highestPrice = Math.max(...result.map(p => p.price));
+          if (highestPrice > 1000) {
+            const newMax = Math.ceil(highestPrice / 100) * 100;
+            setMaxPrice(newMax);
+            setPriceRange([0, newMax]);
+          }
+        }
       } catch (e) {
         console.error("Failed to fetch products:", e);
       }
@@ -115,7 +126,7 @@ export function Search() {
                 <Filter size={18} className="text-orange-500" /> Filters
               </h3>
               <button
-                onClick={() => { setSelectedBrands([]); setPriceRange([0, 1000]); }}
+                onClick={() => { setSelectedBrands([]); setPriceRange([0, maxPrice]); }}
                 className="text-sm text-orange-500 hover:underline"
               >
                 Clear All
@@ -153,7 +164,7 @@ export function Search() {
                 <input
                   type="range"
                   min="0"
-                  max="1000"
+                  max={maxPrice}
                   step="10"
                   value={priceRange[1]}
                   onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
