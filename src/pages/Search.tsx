@@ -13,8 +13,10 @@ export function Search() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [maxPrice, setMaxPrice] = useState(1000);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
+  const [maxPrice, setMaxPrice] = useState(10000);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [sortBy, setSortBy] = useState('popular');
 
   useEffect(() => {
@@ -26,11 +28,9 @@ export function Search() {
         // Dynamically set max price based on actual products
         if (result.length > 0) {
           const highestPrice = Math.max(...result.map(p => p.price));
-          if (highestPrice > 1000) {
-            const newMax = Math.ceil(highestPrice / 100) * 100;
-            setMaxPrice(newMax);
-            setPriceRange([0, newMax]);
-          }
+          const newMax = Math.max(10000, Math.ceil(highestPrice / 100) * 100);
+          setMaxPrice(newMax);
+          setPriceRange([0, newMax]);
         }
       } catch (e) {
         console.error("Failed to fetch products:", e);
@@ -51,10 +51,16 @@ export function Search() {
       );
     }
 
-    if (categoryParam && categoryParam !== 'deals') {
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter(p => selectedCategories.includes(p.category));
+    } else if (categoryParam && categoryParam !== 'deals') {
       filtered = filtered.filter(p => p.category.toLowerCase().includes(categoryParam.toLowerCase()));
     } else if (categoryParam === 'deals') {
       filtered = filtered.filter(p => p.originalPrice);
+    }
+
+    if (selectedConditions.length > 0) {
+      filtered = filtered.filter(p => selectedConditions.includes(p.condition || 'New'));
     }
 
     // Mock brand filtering
@@ -72,9 +78,11 @@ export function Search() {
     }
 
     return filtered;
-  }, [categoryParam, queryParam, selectedBrands, priceRange, sortBy, products]);
+  }, [categoryParam, queryParam, selectedBrands, selectedCategories, selectedConditions, priceRange, sortBy, products]);
 
   const brands = ['ProVision', 'Smart', 'Outdoor', 'Wireless'];
+  const availableCategories = useMemo(() => Array.from(new Set(products.map(p => p.category))).filter(Boolean).sort(), [products]);
+  const availableConditions = useMemo(() => Array.from(new Set(products.map(p => p.condition || 'New'))).filter(Boolean).sort(), [products]);
 
   return (
     <div className="space-y-8 pb-16">
@@ -126,11 +134,59 @@ export function Search() {
                 <Filter size={18} className="text-orange-500" /> Filters
               </h3>
               <button
-                onClick={() => { setSelectedBrands([]); setPriceRange([0, maxPrice]); }}
+                onClick={() => { setSelectedBrands([]); setSelectedCategories([]); setSelectedConditions([]); setPriceRange([0, maxPrice]); }}
                 className="text-sm text-orange-500 hover:underline"
               >
                 Clear All
               </button>
+            </div>
+
+            {/* Category Filter */}
+            <div className="space-y-4 mb-8">
+              <h4 className="font-medium text-slate-900">Category</h4>
+              <div className="space-y-3">
+                {availableCategories.map((cat) => (
+                  <label key={cat} className="flex items-center gap-3 cursor-pointer group">
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedCategories.includes(cat) ? 'bg-orange-500 border-orange-500' : 'border-slate-300 group-hover:border-orange-400'}`}>
+                      {selectedCategories.includes(cat) && <Check size={14} className="text-white" />}
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={selectedCategories.includes(cat)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedCategories([...selectedCategories, cat]);
+                        else setSelectedCategories(selectedCategories.filter(c => c !== cat));
+                      }}
+                    />
+                    <span className="text-slate-600 group-hover:text-slate-900 transition-colors">{cat}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Condition Filter */}
+            <div className="space-y-4 mb-8">
+              <h4 className="font-medium text-slate-900">Condition</h4>
+              <div className="space-y-3">
+                {availableConditions.map((cond) => (
+                  <label key={cond} className="flex items-center gap-3 cursor-pointer group">
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedConditions.includes(cond) ? 'bg-orange-500 border-orange-500' : 'border-slate-300 group-hover:border-orange-400'}`}>
+                      {selectedConditions.includes(cond) && <Check size={14} className="text-white" />}
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={selectedConditions.includes(cond)}
+                      onChange={(e) => {
+                        if (e.target.checked) setSelectedConditions([...selectedConditions, cond]);
+                        else setSelectedConditions(selectedConditions.filter(c => c !== cond));
+                      }}
+                    />
+                    <span className="text-slate-600 group-hover:text-slate-900 transition-colors">{cond}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             {/* Brand Filter */}
