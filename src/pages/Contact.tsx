@@ -11,8 +11,9 @@ export function Contact() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const form = e.currentTarget;
     try {
-      const formData = new FormData(e.currentTarget);
+      const formData = new FormData(form);
       await db.saveMessage({
         id: `msg-${Date.now()}`,
         name: formData.get('name') as string,
@@ -24,7 +25,7 @@ export function Contact() {
       });
 
       setIsSubmitted(true);
-      e.currentTarget.reset();
+      form.reset();
       setTimeout(() => setIsSubmitted(false), 5000);
     } catch (error) {
       console.error("Failed to send message:", error);
