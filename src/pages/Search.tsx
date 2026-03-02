@@ -227,9 +227,37 @@ export function Search() {
                   className="w-full accent-orange-500"
                 />
               </div>
-              <div className="flex items-center justify-between text-sm text-slate-500">
-                <span>${priceRange[0]}</span>
-                <span>${priceRange[1]}</span>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max={priceRange[1]}
+                    value={priceRange[0]}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      setPriceRange([Math.min(val, priceRange[1]), priceRange[1]]);
+                    }}
+                    className="w-full pl-6 pr-2 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    placeholder="Min"
+                  />
+                </div>
+                <span className="text-slate-400">to</span>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">$</span>
+                  <input
+                    type="number"
+                    min={priceRange[0]}
+                    value={priceRange[1]}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || maxPrice;
+                      setPriceRange([priceRange[0], Math.max(val, priceRange[0])]);
+                    }}
+                    className="w-full pl-6 pr-2 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    placeholder="Max"
+                  />
+                </div>
               </div>
             </div>
           </div>

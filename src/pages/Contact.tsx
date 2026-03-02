@@ -1,19 +1,42 @@
 import { motion } from 'motion/react';
 import { Send, Clock, HeartHandshake, MessageSquare } from 'lucide-react';
 import { useState, FormEvent } from 'react';
+import { db } from '../lib/db';
 
 export function Contact() {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    setTimeout(() => setIsSubmitted(false), 3000);
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      await db.saveMessage({
+        id: `msg-${Date.now()}`,
+        name: formData.get('name') as string,
+        email: formData.get('email') as string,
+        subject: formData.get('subject') as string,
+        message: formData.get('message') as string,
+        status: 'Unread',
+        date: new Date().toISOString()
+      });
+
+      setIsSubmitted(true);
+      e.currentTarget.reset();
+      setTimeout(() => setIsSubmitted(false), 5000);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      alert("There was an error sending your message. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-16">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-4"
@@ -26,7 +49,7 @@ export function Contact() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* Contact Form */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
@@ -43,17 +66,17 @@ export function Contact() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Name</label>
-                <input required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all" placeholder="Your Name" />
+                <input name="name" required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all" placeholder="Your Name" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Email</label>
-                <input required type="email" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all" placeholder="your@email.com" />
+                <input name="email" required type="email" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all" placeholder="your@email.com" />
               </div>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Subject</label>
-              <select required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all">
+              <select name="subject" required className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all">
                 <option value="">Select a topic...</option>
                 <option value="product">Product inquiries</option>
                 <option value="availability">Availability checks</option>
@@ -65,14 +88,15 @@ export function Contact() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Message</label>
-              <textarea required rows={5} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all resize-none" placeholder="How can we help you?" />
+              <textarea name="message" required rows={5} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all resize-none" placeholder="How can we help you?" />
             </div>
 
-            <button 
+            <button
               type="submit"
-              className="w-full bg-orange-500 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-orange-600 transition-all hover:shadow-[0_0_20px_rgba(249,115,22,0.4)] flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+              className="w-full bg-orange-500 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-orange-600 transition-all hover:shadow-[0_0_20px_rgba(249,115,22,0.4)] flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
             >
-              {isSubmitted ? 'Message Sent!' : 'Send Message'}
+              {isSubmitting ? 'Sending...' : isSubmitted ? 'Message Sent!' : 'Send Message'}
             </button>
             <p className="text-sm text-slate-500 text-center mt-4">
               Fill out the contact form and our team will respond as soon as possible.
@@ -82,7 +106,7 @@ export function Contact() {
 
         {/* Info Cards */}
         <div className="space-y-6">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
@@ -106,7 +130,7 @@ export function Contact() {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
@@ -121,7 +145,7 @@ export function Contact() {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { db, Order, Product, User } from '../lib/db';
+import { db, Order, Product, User, ContactMessage } from '../lib/db';
 import { useNavigate, Link } from 'react-router-dom';
-import { Users, Package, DollarSign, ShoppingBag, CheckCircle, Clock, Edit, Trash2, Plus } from 'lucide-react';
+import { Users, Package, DollarSign, ShoppingBag, CheckCircle, Clock, Edit, Trash2, Plus, MailOpen, Mail } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export function AdminDashboard() {
@@ -12,7 +12,8 @@ export function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [orders, setOrders] = useState<(Order & { user?: User, product?: Product })[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products'>('overview');
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'messages'>('overview');
   const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
 
@@ -29,9 +30,11 @@ export function AdminDashboard() {
     const allUsers = await db.getUsers();
     const allOrders = await db.getOrders();
     const allProducts = await db.getProducts();
+    const allMessages = await db.getMessages();
 
     setUsers(allUsers.filter(u => u.role === 'user'));
     setProducts(allProducts);
+    setMessages(allMessages);
 
     const enrichedOrders = allOrders.map(order => ({
       ...order,
@@ -116,6 +119,28 @@ export function AdminDashboard() {
     }
   };
 
+  const handleReadMessage = async (msg: ContactMessage) => {
+    if (msg.status === 'Unread') {
+      await db.updateMessage({ ...msg, status: 'Read' });
+      await loadData();
+    }
+  };
+
+  const handleReplyMessage = async (msg: ContactMessage) => {
+    window.location.href = `mailto:${msg.email}?subject=Re: ${encodeURIComponent(msg.subject)}&body=${encodeURIComponent(`\n\n--- Original Message ---\nFrom: ${msg.name}\nDate: ${new Date(msg.date).toLocaleString()}\n\n${msg.message}`)}`;
+    if (msg.status !== 'Replied') {
+      await db.updateMessage({ ...msg, status: 'Replied' });
+      await loadData();
+    }
+  };
+
+  const handleDeleteMessage = async (msgId: string) => {
+    if (confirm('Are you sure you want to delete this message?')) {
+      await db.deleteMessage(msgId);
+      await loadData();
+    }
+  };
+
   if (!user || user.role !== 'admin') return null;
 
   const totalSales = orders.filter(o => o.status !== 'Inquiry' && o.status !== 'Available').reduce((sum, o) => sum + o.totalAmount, 0);
@@ -153,6 +178,17 @@ export function AdminDashboard() {
           className={`px-4 py-2 font-bold rounded-lg transition-colors ${activeTab === 'products' ? 'bg-orange-500 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
         >
           Products
+        </button>
+        <button
+          onClick={() => setActiveTab('messages')}
+          className={`px-4 py-2 font-bold rounded-lg transition-colors flex items-center gap-2 ${activeTab === 'messages' ? 'bg-orange-500 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+        >
+          Messages
+          {messages.filter(m => m.status === 'Unread').length > 0 && (
+            <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full">
+              {messages.filter(m => m.status === 'Unread').length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -412,6 +448,71 @@ export function AdminDashboard() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'messages' && (
+        <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+          <h2 className="text-xl font-bold text-slate-900 mb-6">Customer Messages</h2>
+
+          {messages.length === 0 ? (
+            <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-100">
+              <p className="text-slate-500">No messages found.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`border rounded-2xl p-6 transition-all ${msg.status === 'Unread' ? 'border-orange-200 bg-orange-50/30' : 'border-slate-200 bg-white'}`}
+                  onClick={() => handleReadMessage(msg)}
+                >
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-4">
+                    <div className="flex items-start gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${msg.status === 'Unread' ? 'bg-orange-100 text-orange-500' : 'bg-slate-100 text-slate-500'}`}>
+                        {msg.status === 'Unread' ? <Mail size={20} /> : <MailOpen size={20} />}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-bold text-slate-900">{msg.name}</h3>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${msg.status === 'Unread' ? 'bg-orange-100 text-orange-700' :
+                              msg.status === 'Replied' ? 'bg-green-100 text-green-700' :
+                                'bg-slate-100 text-slate-600'
+                            }`}>
+                            {msg.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-slate-500">{msg.email}</p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-slate-400 font-medium">
+                      {new Date(msg.date).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-slate-100 p-4 rounded-xl mb-4">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Subject: {msg.subject}</p>
+                    <p className="text-slate-700 whitespace-pre-wrap">{msg.message}</p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleReplyMessage(msg); }}
+                      className="bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors flex items-center gap-2"
+                    >
+                      Reply to Customer
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }}
+                      className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-100 transition-colors flex items-center gap-2"
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

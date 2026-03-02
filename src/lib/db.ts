@@ -54,6 +54,16 @@ export interface Notification {
   read: boolean;
 }
 
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  date: string;
+  status: 'Unread' | 'Read' | 'Replied';
+}
+
 import { db as firestore } from './firebase';
 import { collection, doc, getDocs, setDoc, updateDoc, deleteDoc, getDoc, query, where, orderBy } from 'firebase/firestore';
 
@@ -143,6 +153,26 @@ class Database {
 
   async markNotificationRead(id: string): Promise<void> {
     await updateDoc(doc(firestore, 'notifications', id), { read: true });
+  }
+
+  // --- Contact Messages ---
+
+  async getMessages(): Promise<ContactMessage[]> {
+    const querySnapshot = await getDocs(collection(firestore, 'messages'));
+    const messages = querySnapshot.docs.map(doc => doc.data() as ContactMessage);
+    return messages.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }
+
+  async saveMessage(message: ContactMessage): Promise<void> {
+    await setDoc(doc(firestore, 'messages', message.id), message);
+  }
+
+  async updateMessage(message: ContactMessage): Promise<void> {
+    await updateDoc(doc(firestore, 'messages', message.id), message as any);
+  }
+
+  async deleteMessage(id: string): Promise<void> {
+    await deleteDoc(doc(firestore, 'messages', id));
   }
 }
 
