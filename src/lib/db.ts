@@ -4,7 +4,6 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password?: string;
   role: 'user' | 'admin';
   address?: string;
 }
@@ -22,6 +21,7 @@ export interface Product {
   condition?: string;
   additionalImages?: string[];
   isUnlocked?: boolean;
+  specSheet?: string;
 }
 
 export interface Order {
