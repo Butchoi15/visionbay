@@ -100,8 +100,17 @@ export function AdminDashboard() {
 
   const handleDeleteProduct = async (productId: string) => {
     if (confirm('Are you sure you want to delete this product?')) {
-      await db.deleteProduct(productId);
-      await loadData();
+      // Optimistically remove from UI immediately
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      try {
+        await db.deleteProduct(productId);
+        await loadData();
+      } catch (err) {
+        console.error('Failed to delete product:', err);
+        alert('Failed to delete product. You may not have permission, or a network error occurred.');
+        // Reload to restore accurate state
+        await loadData();
+      }
     }
   };
 
